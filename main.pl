@@ -9,10 +9,12 @@
 
   use LWP::Simple;
   my $content = get $url;
-#  die "Couldn't get $url" unless defined $content;
 
   # Check if we have the right data
-  my $check = $content;
+  my $check = "check";
+  if ($content) {
+    $check = $content;
+  }
   $check =~ m{Tor\s*-\s*Home(.*?)</a>}i;
   my $checkPage = $1;
 
@@ -33,12 +35,13 @@
 	# Parse title
 	$titleStr =~ m{>(.*?)</a>\s*</h2>}g;
 	my $titleVal = $1;
-	$titleLength = length($titleVal);
+	my $titleLength = length($titleVal);
+	my $title = "";
 	
 	# Check title length and trim if necessary
 	if ($titleLength > $maxLength) {
-	    $trimLength = $maxLength - 3;
-	    $titleTxt = substr($titleVal, 0, $trimLength);
+	    my $trimLength = $maxLength - 3;
+	    my $titleTxt = substr($titleVal, 0, $trimLength);
 	    $title = "$titleTxt...";
 	} else {
 	    $title = $titleVal;
@@ -76,7 +79,7 @@
       
   } else {	# Page check failed - display message
       print "<div class='blogRow blogRow1'>";
-      print "<br /><p class='blogDate' style=\"text-align:center;color:\#999;\"><em>Recent posts are currently unavailable</em></p></div>";    
+      print "<br /><p class='blogDate' style=\"text-align:center;color:\#999;line-height:16px;\"><em>Recent posts are temporarily unavailable</em></p></div>";    
   }
   
   print "<a href='https://blog.torproject.org' title='Tor Blog Home'>
@@ -85,4 +88,3 @@
 	</div>
 	</a>
 	</div>";
-  
