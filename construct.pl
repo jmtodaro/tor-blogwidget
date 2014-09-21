@@ -3,7 +3,6 @@
   use warnings;
   use open ':std', ':encoding(UTF-8)';
   use LWP::Simple;
-  use XML::RSS;
 
   # RSS feed url
   my $url = 'https://blog.torproject.org/blog/feed';
@@ -25,40 +24,27 @@
 
     if ($checkVal) # Is an rss feed
     {
-      my $rss = XML::RSS->new();
-      $rss->parse( $data );
-        
-      #my $channel = $rss->{channel};
-      #my $title   = $channel->{title};
-      #my $link    = $channel->{link};
-      #my $desc    = $channel->{description};
-      my @items;
-      my $item;
+      my $titleStr = $data;
+      my $linkStr = $data;
+      my $dateStr = $data;
+      my $authorStr = $data;
     
       print "<div class='blogFeed'>
              <div class='blogFirstRow'>
              <h2>Recent Blog Posts</h2>
              </div>";
-         
-      # Store rss post data in array
-      foreach $item ( @{ $rss->{items} } )
-      {
-        push(@items, $item);
-      }
 
       # Generate posts
-      $showPosts = $showPosts - 1;           
       for my $i (0..$showPosts)
       {  
-        my $item = $items[$i];
-      	my $link  = $item->{link};
-      	my $title = $item->{title};
-      	my $date = $item->{pubDate};
-      	my $author = $item->{dc}->{creator};
-      	#my $desc = $item->{description};
       	
-      	# Check title length and trim if necessary
-      	my $titleLength = length($title);
+	# Parse title
+	$titleStr =~ m{<title>(.*?)</title>}g;
+	my $titleVal = $1;
+	my $titleLength = length($titleVal);
+	my $title = $titleVal;
+
+	# Check title length and trim if necessary
       	my $titleTrim = $title;
         if ($titleLength > $titleMaxLength)
       	{
@@ -67,34 +53,49 @@
     	    $titleTrim = "$titleTxt...";
       	}
     
-      	# Trim date
-      	my $dateTrim = substr($date, 0, -15);
-      	
-      	# Check author length and trim if necessary
-      	my $authorLength = length($author);
-      	my $authorTrim = $author;
-        if ($authorLength > $authorMaxLength)
-      	{
-    	    my $authorTrimLength = $authorMaxLength - 3;
-    	    my $authorTxt = substr($author, 0, $authorTrimLength);
-    	    $authorTrim = "$authorTxt...";
-      	}
+	# Parse link
+	$linkStr =~ m{<link>(.*?)</link>}g;
+	my $link = $1;
 
-      	# Begin html output
-      	print "<a href=\'$link\' title=\'$title\'>";
-      	
-      	# Required for alternating row colors - switch blogRow# to change order
-      	if (0 == $i % 2) {
-      	    print "<div class='blogRow blogRow0'>";
-      	} else {
-      	    print "<div class='blogRow blogRow1'>";
-      	}
-      	
-      	print "<p class='blogTitle'>$titleTrim</p>
-      	      <p class='blogDate'>$dateTrim</p>
-      	      <p class='blogAuthor'>Posted by: <em>$author</em></p>
-      	      </div>
-      	      </a>";    
+	if ($i != 0)
+        {
+	  # Parse date
+	  $dateStr =~ m{<pubDate>(.*?)</pubDate>}g;
+	  my $date = $1;
+
+	  # Trim date
+	  my $dateTrim = substr($date, 0, -15);
+
+	  # Parse author
+	  $authorStr =~ m{<dc:creator>(.*?)\s*</dc:creator>}g;
+	  my $author = $1;
+
+	  # Check author length and trim if necessary
+	  my $authorLength = length($author);
+	  my $authorTrim = $author;
+	  if ($authorLength > $authorMaxLength)
+	  {
+	      my $authorTrimLength = $authorMaxLength - 3;
+	      my $authorTxt = substr($author, 0, $authorTrimLength);
+	      $authorTrim = "$authorTxt...";
+	  }
+
+	  # Begin html output
+	  print "<a href=\'$link\' title=\'$title\'>";
+	  
+	  # Required for alternating row colors - switch blogRow# to change order
+	  if (0 == $i % 2) {
+	      print "<div class='blogRow blogRow1'>";
+	  } else {
+	      print "<div class='blogRow blogRow0'>";
+	  }
+	  
+	  print "<p class='blogTitle'>$titleTrim</p>
+		<p class='blogDate'>$dateTrim</p>
+		<p class='blogAuthor'>Posted by: <em>$authorTrim</em></p>
+		</div>
+		</a>";    
+	}
       }
       
     } else {	# Not an rss feed
